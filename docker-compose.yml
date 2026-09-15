@@ -1,0 +1,64 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mnchat
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run npm run setup first}
+      POSTGRES_DB: mnchat
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mnchat -d mnchat"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+  migrate:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://mnchat:${POSTGRES_PASSWORD}@db:5432/mnchat?schema=public
+    command: ["npm", "run", "db:deploy"]
+    depends_on:
+      db:
+        condition: service_healthy
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: development
+      CLIENT_ORIGIN: http://localhost:3001
+      DATABASE_URL: postgresql://mnchat:${POSTGRES_PASSWORD}@db:5432/mnchat?schema=public
+      UPLOAD_DIR: /app/server/uploads
+    ports:
+      - "127.0.0.1:3001:3001"
+    volumes:
+      - uploads_data:/app/server/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+  jobs:
+    build: .
+    restart: unless-stopped
+    init: true
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://mnchat:${POSTGRES_PASSWORD}@db:5432/mnchat?schema=public
+      UPLOAD_DIR: /app/server/uploads
+    command: ["npm", "run", "jobs"]
+    volumes:
+      - uploads_data:/app/server/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+volumes:
+  postgres_data:
+  uploads_data:

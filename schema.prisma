@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+}
+enum MediaKind {
+  IMAGE
+  AUDIO
+}
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  username     String   @unique @db.VarChar(30)
+  email        String   @unique @db.VarChar(254)
+  passwordHash String
+  avatarId     String?  @db.Uuid
+  avatar       Media?   @relation("Avatar", fields: [avatarId], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  sessions     Session[]
+  lowFriends   Friendship[] @relation("LowUser")
+  highFriends  Friendship[] @relation("HighUser")
+  messages     Message[]
+  media        Media[] @relation("OwnedMedia")
+  posts        Post[]
+  comments     Comment[]
+}
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([expiresAt])
+  @@index([userId])
+}
+model Friendship {
+  id          String @id @default(uuid()) @db.Uuid
+  userLowId   String @db.Uuid
+  userHighId  String @db.Uuid
+  requesterId String @db.Uuid
+  lowUser     User @relation("LowUser", fields: [userLowId], references: [id], onDelete: Cascade)
+  highUser    User @relation("HighUser", fields: [userHighId], references: [id], onDelete: Cascade)
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  conversation Conversation?
+  @@unique([userLowId, userHighId])
+  @@index([userHighId, status])
+  @@index([userLowId, status])
+}
+model Conversation {
+  id           String @id @default(uuid()) @db.Uuid
+  friendshipId String @unique @db.Uuid
+  friendship   Friendship @relation(fields: [friendshipId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @default(now()) @db.Timestamptz(3)
+  messages     Message[]
+}
+model Message {
+  id                String @id @default(uuid()) @db.Uuid
+  clientId          String @db.Uuid
+  conversationId    String @db.Uuid
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId          String @db.Uuid
+  sender            User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  text              String @default("") @db.VarChar(4000)
+  mediaId           String? @db.Uuid
+  media             Media? @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
+  readAt            DateTime? @db.Timestamptz(3)
+  moderationVersion Int @default(1)
+  @@unique([senderId, clientId])
+  @@index([conversationId, createdAt, id])
+  @@index([readAt, createdAt])
+  @@index([moderationVersion])
+}
+model Media {
+  id        String @id @default(uuid()) @db.Uuid
+  ownerId   String @db.Uuid
+  owner     User @relation("OwnedMedia", fields: [ownerId], references: [id], onDelete: Cascade)
+  filename  String @unique
+  mimeType  String
+  kind      MediaKind
+  size      Int
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  messages  Message[]
+  avatars   User[] @relation("Avatar")
+  @@index([createdAt])
+  @@index([ownerId])
+}
+model Post {
+  id                String @id @default(uuid()) @db.Uuid
+  authorId          String @db.Uuid
+  author            User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  text              String @db.VarChar(4000)
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
+  moderationVersion Int @default(1)
+  comments          Comment[]
+  @@index([createdAt, id])
+  @@index([moderationVersion])
+}
+model Comment {
+  id                String @id @default(uuid()) @db.Uuid
+  postId            String @db.Uuid
+  post              Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId          String @db.Uuid
+  author            User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  text              String @db.VarChar(2000)
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
+  moderationVersion Int @default(1)
+  @@index([postId, createdAt, id])
+  @@index([moderationVersion])
+}

@@ -1,0 +1,38 @@
+{
+  "name": "mnchat",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev": "concurrently -k -n api,web,jobs \"npm:dev:server\" \"npm:dev:client\" \"npm:jobs\"",
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "jobs": "npm run jobs -w server",
+    "jobs:once": "npm run jobs:once -w server",
+    "db:generate": "npm run db:generate -w server",
+    "db:migrate": "npm run db:migrate -w server",
+    "db:deploy": "npm run db:deploy -w server",
+    "db:studio": "npm run db:studio -w server",
+    "build": "npm run db:generate && npm run build -w client",
+    "start": "npm run start -w server",
+    "test": "npm run test -w server",
+    "test:integration": "node scripts/test-integration.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "prisma": "6.19.0"
+  },
+  "overrides": {
+    "@prisma/config": {
+      "deepmerge-ts": "^8.0.0",
+      "effect": "^3.20.0"
+    }
+  }
+}
