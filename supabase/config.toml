@@ -1,0 +1,2 @@
+[functions.mnchat-auth]
+verify_jwt = false
