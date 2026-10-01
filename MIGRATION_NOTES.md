@@ -67,3 +67,12 @@ RLS ซ่อนโพสต์หมดอายุและปิดการ�
 หากต้องการหยุดการลบในอนาคต: `select cron.unschedule('mnchat-feed-retention');` (ไม่กู้คืนข้อมูลที่ถูกลบ และ RLS ยังซ่อนโพสต์หมดอายุ)
 
 อ้างอิงการตั้งงาน: https://supabase.com/docs/guides/cron
+
+
+## Production verification — 2026-10-01
+
+- Latest export deployed to https://my-web-my-web.vercel.app; Vercel READY deployment dpl_xLzPxbpPy91YDpJMTPtG79YkTfUE.
+- Supabase Auth health HTTP 200; five tables published to Realtime.
+- With explicit user confirmation, installed 202610010001_feed_retention.sql. Cron active, latest run succeeded; one expired post removed, zero expired posts left. Private messages remained at two.
+- Live write smoke tests were not rerun because automatic approval rejected adding production QA data. Read-only checks passed.
+- Production status supersedes the earlier export-only installation status above.
