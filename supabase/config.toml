@@ -1,2 +1,6 @@
 [functions.mnchat-auth]
 verify_jwt = false
+
+[functions.mnchat-honor-unlock]
+# The function validates the bearer token with Auth /user before granting access.
+verify_jwt = false

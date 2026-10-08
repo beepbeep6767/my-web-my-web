@@ -1,3 +1,7 @@
+## Honors: submissions, review code and top 50 — 2026-10-09
+
+Adds private photo submissions, a server-checked shared reviewer code, one-time +1P approval and a Realtime top-50 leaderboard. Review grants expire after 15 minutes and are scoped to the current login session. No username is automatically made administrator. Requires the new Supabase migration, Edge Function and server secret before production activation. See [HONORS_SETUP.md](HONORS_SETUP.md). No live database migration has been applied by this change.
+
 ## Mnchat admin and school OTP — 2026-10-09
 
 The admin entry now uses Mnchat branding and a blue/pink interface. School verification uses a six-digit numeric OTP and unlocks membership automatically; administrator approval is not needed. The admin directory shows account IDs, usernames, confirmed emails and last login times with a 15-second first-page refresh. Gmail/app passwords and OTPs are never exposed to administrators. Custom SMTP, six-digit Auth configuration, the email template and the migration still need live setup and a real mailbox test before production rollout. See SCHOOL_ACCESS_SETUP.md.

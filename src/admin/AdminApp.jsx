@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { client, result } from '../supabase.js';
 import { ErrorNotice } from '../components/Shared.jsx';
+import { HonorSubmissions } from '../components/Honors.jsx';
 import AdminBrand from './AdminBrand.jsx';
 const stamp = value => value ? new Date(value).toLocaleString('th-TH') : '—';
 export default function AdminApp({ status, onSignOut }) {
@@ -47,5 +48,6 @@ export default function AdminApp({ status, onSignOut }) {
       <ErrorNotice message={error}/><div className="admin-table-wrap"><table><thead><tr><th scope="col">ชื่อผู้ใช้</th><th scope="col">รหัสผู้ใช้</th><th scope="col">อีเมลโรงเรียน</th><th scope="col">ยืนยันอีเมล</th><th scope="col">เข้าสู่ระบบล่าสุด</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td><strong>{row.username}</strong></td><td><code>{row.id}</code></td><td>{row.email || 'ยังไม่ยืนยัน'}</td><td><span className={`admin-badge ${row.verified_at ? 'verified' : ''}`}>{row.verified_at ? 'ยืนยันแล้ว' : 'รอยืนยัน'}</span><small>{stamp(row.verified_at)}</small></td><td>{stamp(row.last_sign_in_at)}</td></tr>)}</tbody></table></div>
       {!rows.length && !busy && !error && <p>ยังไม่มีสมาชิก</p>}{busy && <p role="status">กำลังโหลด…</p>}{more && <button className="secondary" disabled={busy} onClick={() => load(true)}>โหลดสมาชิกเพิ่ม</button>}
     </section>
+    <HonorSubmissions admin reviewOnly/>
   </main>;
 }
