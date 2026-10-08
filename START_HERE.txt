@@ -1,3 +1,7 @@
+2026-10-09: Mnchat admin + school email OTP (six numeric digits).
+Ordinary members unlock automatically after verification. Admin data remains restricted.
+Read SCHOOL_ACCESS_SETUP.md before deploying: SMTP/Auth settings and live email delivery are not yet verified.
+
 OCHAT — Open conversations
 
 อัปเดตระบบโรงเรียน 9 ตุลาคม 2026:

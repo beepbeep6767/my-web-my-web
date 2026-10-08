@@ -1,3 +1,7 @@
+## Mnchat admin and school OTP — 2026-10-09
+
+The admin entry now uses Mnchat branding and a blue/pink interface. School verification uses a six-digit numeric OTP and unlocks membership automatically; administrator approval is not needed. The admin directory shows account IDs, usernames, confirmed emails and last login times with a 15-second first-page refresh. Gmail/app passwords and OTPs are never exposed to administrators. Custom SMTP, six-digit Auth configuration, the email template and the migration still need live setup and a real mailbox test before production rollout. See SCHOOL_ACCESS_SETUP.md.
+
 # Migration notes — 2026-09-15
 
 ## School verification and administration — 2026-10-09

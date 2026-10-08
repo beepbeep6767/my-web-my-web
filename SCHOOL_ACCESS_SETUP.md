@@ -6,7 +6,7 @@ This release extends the existing MNChat backend and OCHAT interface. It preserv
 
 Accept 1–5 ASCII digits followed by `@mh.ac.th`, with numeric value 0–30000 inclusive. Leading zeroes are preserved because different spellings may identify different mailboxes. Examples: `0@mh.ac.th`, `01234@mh.ac.th`, `30000@mh.ac.th`. Gmail addresses, aliases, subdomains and larger numbers are rejected.
 
-Users first enter their school address, then use the existing username/password login or signup. Signed-in users request a Supabase email-change confirmation link. Confirming the new mailbox preserves their existing account and password. The database checks the current confirmed email, never localStorage or user-editable metadata. A verified account can return without repeating email verification. A pending change does not change the confirmed address until the link succeeds.
+Users first enter their school address, then use the existing username/password login or signup. Signed-in users request a Supabase email-change OTP and enter the six numeric digits on the same website. Supabase generates and verifies the code; it is not generated in JavaScript or disclosed to administrators. Confirmation automatically unlocks ordinary membership without administrator approval and preserves the existing account ID and password. The database checks the current confirmed email, never localStorage or user-editable metadata. A verified account can return without repeating email verification. A pending change does not change the confirmed address until verification succeeds.
 
 ## Required deployment order
 
@@ -16,20 +16,22 @@ Do not promote this frontend before the database and mail sender are ready: old 
 2. Configure and test a **custom SMTP sender**. The default Supabase sender is restricted and is not a production school-mail sender. Keep SMTP passwords in the Dashboard; never in Vite variables or source control.
 3. Enable **Confirm email**. This is essential: otherwise direct Auth signup may automatically confirm an arbitrary school address.
 4. Existing username accounts have internal `@mnchat.invalid` addresses without inboxes. To confirm only the real new school address, **Secure email change must be OFF**. This changes the email-change policy for the project; the owner must approve that setting. Real email ownership is still confirmed at the new mailbox. Do not disable email confirmation.
+   Set **Email OTP length = 6** and **Email OTP expiry = 600 seconds**. Preserve server rate limits for both sending and verification. Put `supabase/templates/email-change.html` in the **Change email address** email template, with subject `รหัสยืนยันอีเมล Mnchat`. The template must contain `{{ .Token }}`. Existing OTP length was 8 at the last inspection; the frontend's six-digit field requires this setting before rollout. These settings and the template are not automatically changed by deploying Vercel.
 5. Set the Supabase Site URL to the live frontend and allow the exact redirect URLs for the frontend `/` and the separately deployed admin `/admin.html`. Add an exact staged deployment URL when testing there. Avoid broad wildcard redirects in production.
 6. Apply `supabase/migrations/202610090001_school_access.sql` once, after the existing migrations, with an account allowed to manage SQL. It adds restrictive RLS, protected RPCs and inbox indexes. Existing accounts must verify before accessing community data.
 7. Deploy the frontend using the existing Supabase URL and public key. Deploy the separate admin entry to another Vercel project using `vercel.admin.json` as its local config, with the same two public Supabase variables. Alternatively, `/admin.html` is available in the main build.
 8. The owner grants exactly the chosen verified account admin access in SQL Editor: `insert into public.mnchat_admins(user_id) values ('REPLACE_WITH_VERIFIED_USER_UUID') on conflict do nothing;`. Never grant by a client-supplied flag. This release does not assign an administrator automatically.
-9. Test with an owner-controlled school mailbox: send, receive, click, return, reload, sign out/in, and open a second browser. Test expired links, retries, duplicate addresses and rejection of unverified direct API access. Verify the admin URL using both an admin and a regular member before promoting.
+9. Test with an owner-controlled school mailbox: send, receive, enter the OTP, automatically enter the community, reload, sign out/in, and open a second browser. Test wrong/expired/reused codes, retries, duplicate addresses and rejection of unverified direct API access. Verify the admin URL using both an admin and a regular member before promoting. No real mailbox test has been completed yet.
 
 ## API and data
 
 - `POST /auth/v1/user` is **not** used. The Supabase SDK sends its supported authenticated `PUT /auth/v1/user` email update with an allowlisted redirect.
 - `POST /rest/v1/rpc/mnchat_school_status`: own profile, verified boolean and admin boolean.
+- `POST /auth/v1/verify`: the SDK's `verifyOtp({ email, token, type: 'email_change' })` verifies the emailed code. The frontend rechecks the protected status RPC before revealing the community.
 - `POST /rest/v1/rpc/mnchat_admin_members`: 50 records per page, UUID cursor in `after_id`; only verified administrators may call it.
-- Admin fields: username, confirmed school email, confirmation timestamp and last Auth sign-in timestamp. No passwords, tokens or message contents.
+- Admin fields: username, account UUID, confirmed school email, confirmation timestamp and last Auth sign-in timestamp. No Gmail passwords, application passwords, OTPs, tokens or message contents. The profile username is the available display name; no extra personal name is collected.
 - The two websites read the same protected Supabase API. No browser webhook sends private account data to an unapproved external destination.
-- Admin list is deliberately not broadcast over public realtime channels. Refresh retrieves current data.
+- The Mnchat admin console uses a blue/pink design separate from the preserved main interface. Its first page refreshes every 15 seconds while visible and on window focus. Loading more pauses automatic refresh to preserve pagination; manual refresh returns to page one. Last sign-in is a login timestamp, not live online presence or an exhaustive login-event audit trail.
 - Source files and JavaScript remain downloadable as with any public SPA. Security is enforced in database policies and privileged RPCs. The community interface is lazy-loaded after verification.
 - Existing signed media links remain valid until their original expiry. New media access requires verification.
 
@@ -41,7 +43,7 @@ These changes reduce redundant work; they do **not** establish a concurrent-user
 
 ## Verification
 
-`node --test supabase/school-access.test.mjs supabase/message-history.test.mjs supabase/username-auth.test.mjs supabase/feed-retention.test.mjs`
+`node --test supabase/email-verification.test.mjs supabase/school-access.test.mjs supabase/message-history.test.mjs supabase/username-auth.test.mjs supabase/feed-retention.test.mjs`
 
 Database tests use a fresh in-memory PostgreSQL environment:
 
