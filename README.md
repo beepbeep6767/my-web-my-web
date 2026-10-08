@@ -1,4 +1,11 @@
-# MNChat — Vercel + Supabase
+<!-- Latest product: OCHAT. Earlier MNChat notes are historical. -->
+# OCHAT — Vercel + Supabase
+
+## School access update — 2026-10-09
+
+This version requires confirmed school email before community access. Read [SCHOOL_ACCESS_SETUP.md](SCHOOL_ACCESS_SETUP.md) before deployment: custom SMTP, email confirmation settings and the new migration must be ready before promotion. The admin site has a separate `admin.html` entry and `vercel.admin.json` deployment configuration. No administrator is assigned by default.
+
+Validation: 18 automated JavaScript tests passed, plus in-memory PostgreSQL RLS/RPC tests and local browser checks for address rejection, login transition, rate-limit errors and administrator isolation. Real email delivery and production activation are pending Supabase access/configuration. Earlier deployment notes below describe previous releases.
 
 The deployable application lives in `src/`, with images in `public/`.
 This repository was uploaded with its original folders flattened. The corrected client now uses Supabase Auth, PostgreSQL, private Storage, and Realtime instead of the original Express/Socket.io server.
@@ -62,7 +69,7 @@ Original flattened files are preserved for reference and are not application ent
 
 RLS ซ่อนโพสต์หมดอายุและปิดการเพิ่มความคิดเห็นหลังหมดอายุโดยใช้เวลาฐานข้อมูล หน้าจอที่เปิดค้างตรวจทุกวินาทีและเมื่อกลับมาเปิดแท็บ (เวลาหน้าจอขึ้นกับนาฬิกาอุปกรณ์) งานลบยังทำงานแม้ไม่มีผู้ใช้เปิดเว็บ หาก Supabase ถูกพัก งานจะไม่ทำงานจนกว่าจะกลับมาออนไลน์
 
-สถานะของ ZIP นี้: ยังไม่ได้ติดตั้ง migration ลบโพสต์บนฐานข้อมูลจริง และยังไม่ได้ deploy การเปลี่ยนแปลงนี้ การทดสอบอัตโนมัติครอบคลุมขอบเขตอายุโพสต์และข้อมูลค้างหน้าจอ; SQL ต้องตรวจการรัน Cron หลังติดตั้งจริง
+สถานะเมื่อส่งออกเวอร์ชันลบโพสต์ครั้งแรก: ยังไม่ได้ติดตั้ง migration หรือ deploy ในขณะนั้น ดูสถานะการติดตั้งจริงวันที่ 2026-10-01 และสถานะ OCHAT ล่าสุดด้านล่าง
 
 หากต้องการหยุดการลบในอนาคต: `select cron.unschedule('mnchat-feed-retention');` (ไม่กู้คืนข้อมูลที่ถูกลบ และ RLS ยังซ่อนโพสต์หมดอายุ)
 
@@ -76,3 +83,19 @@ RLS ซ่อนโพสต์หมดอายุและปิดการ�
 - With explicit user confirmation, installed 202610010001_feed_retention.sql. Cron active, latest run succeeded; one expired post removed, zero expired posts left. Private messages remained at two.
 - Live write smoke tests were not rerun because automatic approval rejected adding production QA data. Read-only checks passed.
 - Production status supersedes the earlier export-only installation status above.
+
+
+## OCHAT visual redesign — 2026-10-06
+
+The product is now OCHAT / Open conversations. A new geometric botanical SVG mark, forest/lime/cream palette, graphic entrance, dark navigation, community board, directory and conversation styling replace the previous design. Mobile layouts and keyboard focus states are included.
+
+Authentication, Supabase project/configuration, account IDs, profiles, friendships, storage, realtime messages and two-hour feed retention keep their existing implementation. Database names, internal mnchat RPC/function identifiers and environment keys are retained for compatibility. No migration is required for this visual update. Original files and the earlier cover remain available as historical source; the active interface no longer uses that cover.
+
+This release is an export only; production was not redeployed. Set the existing VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY before building. Never use the service-role key in Vite.
+
+
+## Final audit — 2026-10-06
+
+Fixed message ordering when realtime arrivals overlap a history refresh, refreshed expanded comment threads when their count changes, corrected desktop chat height with the connection banner, and prevented Enter from sending while disconnected. No database migration is required.
+
+Validation: production build passed; all 14 auth, retention and message-history tests passed. Local browser fixtures verified incoming expanded comments, disconnected Enter handling, and chat layouts at 320, 768 and 1440 pixels without horizontal overflow. These checks did not write to live Supabase or deploy production.

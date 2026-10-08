@@ -1,9 +1,9 @@
 -- Run in the SQL Editor. Every fixture is rolled back; no account remains.
 begin;
-insert into auth.users(id,raw_user_meta_data) values
-('10000000-0000-4000-8000-000000000001','{"username":"qa_sender"}'),
-('10000000-0000-4000-8000-000000000002','{"username":"qa_recipient"}'),
-('10000000-0000-4000-8000-000000000003','{"username":"qa_outsider"}');
+insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
+('10000000-0000-4000-8000-000000000001','29991@mh.ac.th',now(),'{"username":"qa_sender"}'),
+('10000000-0000-4000-8000-000000000002','29992@mh.ac.th',now(),'{"username":"qa_recipient"}'),
+('10000000-0000-4000-8000-000000000003','29993@mh.ac.th',now(),'{"username":"qa_outsider"}');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 insert into public.friendships("senderId","recipientId") values('10000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000002');

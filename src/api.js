@@ -4,9 +4,10 @@ export const time = date => date ? new Intl.DateTimeFormat(undefined, { hour: 'n
 export const dateTime = date => new Date(date).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 export const normalizeMessage = m => ({ ...m, media: m.mediaId ? { id: m.mediaId, kind: m.mediaId.includes('/image/') ? 'IMAGE' : 'AUDIO' } : null });
 async function currentUser() {
-  const { data, error } = await client().auth.getUser();
-  if (error || !data.user) throw new Error('Please sign in to continue.');
-  return data.user;
+  // RLS and RPCs validate the JWT on the server. Avoid an extra Auth HTTP request per query.
+  const { data, error } = await client().auth.getSession();
+  if (error || !data.session?.user) throw new Error('Please sign in to continue.');
+  return data.session.user;
 }
 async function profile(id) { return result(client().from('profiles').select('*').eq('id', id).single()); }
 async function friendships(uid) {
@@ -39,15 +40,8 @@ export async function api(path, options={}) {
   if(route === '/friends') { await result(db.from('friendships').insert({senderId:u.id,recipientId:body.userId})); return {}; }
   if(route.startsWith('/friends/')) { await result(db.rpc('mnchat_friend_action',{friend_id:route.split('/')[2],action:method==='DELETE'?'decline':'accept'})); return {}; }
   if(route === '/conversations') {
-    const friends=(await friendships(u.id)).filter(f=>f.status==='ACCEPTED');
-    return {conversations:await Promise.all(friends.map(async f=>{
-      const [rows,count]=await Promise.all([
-        result(db.from('messages').select('*').eq('conversationId',f.id).order('createdAt',{ascending:false}).limit(1)),
-        db.from('messages').select('id',{count:'exact',head:true}).eq('conversationId',f.id).neq('senderId',u.id).is('readAt',null)
-      ]);
-      if(count.error) throw count.error;
-      return {id:f.id,user:f.user,lastMessage:rows[0]?normalizeMessage(rows[0]):null,unreadCount:count.count||0};
-    }))};
+    const rows = await result(db.rpc('mnchat_inbox'));
+    return { conversations: rows.map(row => ({ ...row, lastMessage: row.lastMessage ? normalizeMessage(row.lastMessage) : null })) };
   }
   if(route.startsWith('/conversations/')) {
     let q=db.from('messages').select('*').eq('conversationId',route.split('/')[2]).order('createdAt',{ascending:false}).order('id',{ascending:false}).limit(50);

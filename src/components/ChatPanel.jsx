@@ -1,3 +1,4 @@
+import { refreshMessages } from '../messageHistory.js';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ImagePlus, Send, X, Check, CheckCheck, MessageCircle, ShieldCheck } from 'lucide-react';
 import { api, uploadFile, socketRequest, time, dateTime } from '../api.js';
@@ -24,21 +25,17 @@ export default function ChatPanel({ conversation, user, socket, connected, onBac
   useEffect(() => {
     let live = true;
     async function refresh() {
-      try { const data = await api(`/conversations/${id}/messages`); if (live) { setMessages(old => {
-        const newestIds = new Set(data.messages.map(m => m.id));
-        const oldest = data.messages[0]?.createdAt;
-        const newest = data.messages.at(-1)?.createdAt;
-        const retainedHistory = old.filter(m => oldest && (m.createdAt < oldest || m.createdAt >= newest));
-        return [...retainedHistory.filter(m => !newestIds.has(m.id)), ...data.messages];
-      }); if (!initialized.current) { setCursor(data.nextCursor); initialized.current = true; } } }
+      try { const data = await api(`/conversations/${id}/messages`); if (live) { setMessages(old => refreshMessages(old, data.messages)); if (!initialized.current) { setCursor(data.nextCursor); initialized.current = true; } } }
       catch (error) { if (live) setError(error.message); }
       finally { if (live) setLoading(false); }
     }
     function incoming(message) { if (message.conversationId === id) { merge([message]); } }
-    function read(receipt) { if (receipt.conversationId === id) { setMessages(old => old.map(m => receipt.messageIds.includes(m.id) ? { ...m, readAt: receipt.readAt } : m)); onChanged(); } }
+    function read(receipt) { if (receipt.conversationId === id) { setMessages(old => old.map(m => receipt.messageIds.includes(m.id) ? { ...m, readAt: receipt.readAt } : m)); } }
     refresh(); socket?.on('connect', refresh); socket?.on('message:new', incoming); socket?.on('messages:read', read);
-    const interval = setInterval(refresh, 30000);
-    return () => { live = false; clearInterval(interval); socket?.off('connect', refresh); socket?.off('message:new', incoming); socket?.off('messages:read', read); };
+    const visibleRefresh = () => { if (document.visibilityState === 'visible') refresh(); };
+    document.addEventListener('visibilitychange', visibleRefresh);
+    const interval = setInterval(visibleRefresh, 60000 + Math.random() * 10000);
+    return () => { live = false; clearInterval(interval); document.removeEventListener('visibilitychange', visibleRefresh); socket?.off('connect', refresh); socket?.off('message:new', incoming); socket?.off('messages:read', read); };
   }, [id, socket]);
   useEffect(() => {
     visibleIds.current.clear();
@@ -56,7 +53,7 @@ export default function ChatPanel({ conversation, user, socket, connected, onBac
   }
   function chooseFile(selected) { if (selected?.size > 12 * 1024 * 1024) return setError('Choose a file smaller than 12 MB.'); setFile(selected || null); setError(''); }
   async function send(event) {
-    event.preventDefault(); if ((!text.trim() && !file) || sending) return;
+    event.preventDefault(); if ((!text.trim() && !file) || sending || !connected) return;
     setSending(true); setError('');
     try {
       // Retain identifiers and uploaded attachment across retries after lost acknowledgments.
