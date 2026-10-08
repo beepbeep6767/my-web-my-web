@@ -1,0 +1,7 @@
+.git
+.preview/
+.env*
+node_modules/
+dist/
+supabase/
+*.zip

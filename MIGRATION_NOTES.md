@@ -76,3 +76,14 @@ RLS ซ่อนโพสต์หมดอายุและปิดการ�
 - With explicit user confirmation, installed 202610010001_feed_retention.sql. Cron active, latest run succeeded; one expired post removed, zero expired posts left. Private messages remained at two.
 - Live write smoke tests were not rerun because automatic approval rejected adding production QA data. Read-only checks passed.
 - Production status supersedes the earlier export-only installation status above.
+## 2026-10-09 — Honors integrated into original MNChat
+
+Based on the original MNChat production design, with no OCHAT rebrand or separate admin website. Added `src/components/Honors.jsx`, `src/honors.js`, `src/honors.css` and a coalesced realtime refresh helper. The existing App contains both new views.
+
+Apply only `supabase/migrations/202610090002_honors.sql` to an existing MNChat database after checking that its honor tables do not already exist. It is additive and transactional: no existing records are deleted, no existing authentication rules are changed, and feed/chat migrations are not rerun. Do not apply the school-access migration from another branch.
+
+Deploy `mnchat-honor-unlock` and configure `MNCHAT_HONOR_REVIEW_CODE` as a Supabase server secret. Review access is bound to a validated Auth user and login session; only the server can issue grants. Browser roles cannot write score tables directly. Existing username authentication supplies the shared request limiter. The code is never included in frontend environment variables or this export.
+
+Updated transitive `source-map-js` to 1.2.2 following the dependency audit.
+
+Local validation: production Vite build, existing username-auth tests, review-code tests and an isolated PostgreSQL-compatible test cover permissions, proof ownership, duplicate submission/approval, score accumulation, top 50/ties and expiring session-bound grants. Local tests do not establish live Supabase deployment or production behavior.

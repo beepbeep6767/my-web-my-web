@@ -1,5 +1,18 @@
 # MNChat — Vercel + Supabase
 
+## Honors inside the original MNChat (2026-10-09)
+
+This release adds two navigation entries to the existing MNChat application: **เกียรติยศ** and **ส่งผลงาน**. It retains MNChat's blue/pink design, logo, username login, chat, friends, profiles and feed. OCHAT is a separate project and is not included in this release.
+
+- Members submit a JPG, PNG, WEBP or GIF (up to 12 MB) and a 3–2000 character description. Maximum 20 submissions per member per 24 hours.
+- The submission page has a separate approval tab. A server-verified review code unlocks review access for the current login session for 15 minutes.
+- Clicking ✓ approves one submission and awards exactly **1P** in one database transaction. Retrying an approval does not award another point.
+- The leaderboard lists at most 50 members, ordered by accumulated points. Equal scores share a rank; ties at the cutoff use award time then user ID. There is no automatic prize payout or contest end date.
+- Submission records and newly uploaded proof images are visible to their author and unlocked reviewers. Realtime refreshes scores and submissions; visible pages also reconcile every 15 seconds.
+- Honor scores and submissions are separate from the feed's two-hour retention.
+
+Deployment instructions and current limitations are in [docs/HONORS.md](docs/HONORS.md). The source and local checks are ready; installing the migration, function and server secret on the live Supabase project is required before production release. Existing MNChat login is used; this feature does not depend on the separate, unfinished school-email verification work.
+
 The deployable application lives in `src/`, with images in `public/`.
 This repository was uploaded with its original folders flattened. The corrected client now uses Supabase Auth, PostgreSQL, private Storage, and Realtime instead of the original Express/Socket.io server.
 

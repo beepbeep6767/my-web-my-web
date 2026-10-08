@@ -1,2 +1,5 @@
 [functions.mnchat-auth]
 verify_jwt = false
+
+[functions.mnchat-honor-unlock]
+verify_jwt = false
